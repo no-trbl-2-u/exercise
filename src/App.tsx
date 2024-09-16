@@ -1,7 +1,5 @@
-import axios from "axios";
-import "./App.css";
-import Header from "./Header";
 import React, { useEffect, useState } from "react";
+import axios from "axios";
 
 import List from "@mui/material/List";
 import ListItemButton from "@mui/material/ListItemButton";
@@ -10,19 +8,24 @@ import ListItemText from "@mui/material/ListItemText";
 import Checkbox from "@mui/material/Checkbox";
 import { Box, TextField } from "@mui/material";
 
+import "./App.css";
+import Header from "./Header";
+
 function App() {
+  // Future feature: Extract into a Context driven State-Machine
   const [inputValue, setInputValue] = useState<string>("");
-  const [firstTenTodos, setFirstTenTodos] = useState<ITodo[] | []>([]);
+  const [currentTodos, setCurrentTodos] = useState<ITodo[] | []>([]);
   const [restOfTodos, setRestOfTodos] = useState<ITodo[]>([]);
 
   const clearSelectedTodos = () =>
-    setFirstTenTodos(firstTenTodos.filter((todo) => !todo.completed));
+    setCurrentTodos(currentTodos.filter((todo) => !todo.completed));
 
+  // Get 10 more Todos from the API to add to the list
   const getMoreTodosHandler = () => {
-    setFirstTenTodos([
-      ...firstTenTodos,
-      ...restOfTodos.slice(0, 10 - firstTenTodos.length),
-    ]);
+    setCurrentTodos([...currentTodos, ...restOfTodos.slice(0, 10)]);
+
+    // Remove the ten from Rest
+    setRestOfTodos(restOfTodos.slice(10));
   };
 
   // More details for input event for better auto suggestion and type safety
@@ -34,25 +37,24 @@ function App() {
   const addCustomTodoHandler = (e) => {
     const newTodo: ITodo = {
       // Add 2 to length to make room for
-      id: firstTenTodos.length + 2,
+      id: currentTodos.length + restOfTodos.length + 1,
       userId: 1,
       title: inputValue,
       completed: false,
     };
 
-    const newFirstTenTodos = [newTodo, ...firstTenTodos.slice(0, 9)];
+    const newCurrentTodos = [...currentTodos, newTodo];
 
-    setFirstTenTodos(newFirstTenTodos);
+    setCurrentTodos(newCurrentTodos);
     setInputValue("");
-    window.scrollTo(0, 0);
   };
 
   const handleToggle = (id: number) => {
-    const finalArray = firstTenTodos.map((todo) =>
+    const finalArray = currentTodos.map((todo) =>
       id === todo.id ? { ...todo, completed: !todo.completed } : todo
     );
 
-    setFirstTenTodos(finalArray);
+    setCurrentTodos(finalArray);
   };
 
   // Load Initial TODOs
@@ -65,7 +67,7 @@ function App() {
       const firstTen: ITodo[] = result.data.slice(0, 10);
       const rest: ITodo[] = result.data.slice(10);
 
-      setFirstTenTodos(firstTen);
+      setCurrentTodos(firstTen);
       setRestOfTodos(rest);
     };
 
@@ -76,7 +78,7 @@ function App() {
     <div className="App">
       <Header />
       <List sx={{ width: "100%", maxWidth: 360, bgcolor: "background.paper" }}>
-        {firstTenTodos.map((todoProps) => (
+        {currentTodos.map((todoProps) => (
           <ListItemButton onClick={() => handleToggle(todoProps.id)}>
             <ListItemIcon>
               <Checkbox
@@ -108,7 +110,7 @@ function App() {
           />
         </Box>
       </List>
-      <button onClick={clearSelectedTodos}>Delete Selected Todos</button>
+      <button onClick={clearSelectedTodos}>Delete Completed Todos</button>
       <button onClick={getMoreTodosHandler}>Get More Todos</button>
       <button onClick={addCustomTodoHandler}>Add Custom Todo</button>
     </div>
@@ -116,3 +118,8 @@ function App() {
 }
 
 export default App;
+
+// TODO:
+// ==> Add Loading and Error States (Spinner/Message)
+// ==> Make sure Buttons Responsive
+// ==> Clean up design
