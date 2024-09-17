@@ -6,7 +6,7 @@ import ListItemButton from "@mui/material/ListItemButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import Checkbox from "@mui/material/Checkbox";
-import { Box, TextField } from "@mui/material";
+import { Box, CircularProgress, TextField } from "@mui/material";
 
 import "./App.css";
 import Header from "./Header";
@@ -16,6 +16,7 @@ function App() {
   const [inputValue, setInputValue] = useState<string>("");
   const [currentTodos, setCurrentTodos] = useState<ITodo[] | []>([]);
   const [restOfTodos, setRestOfTodos] = useState<ITodo[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const clearSelectedTodos = () =>
     setCurrentTodos(currentTodos.filter((todo) => !todo.completed));
@@ -60,19 +61,41 @@ function App() {
   // Load Initial TODOs
   useEffect(() => {
     const getTodos = async () => {
-      const result = await axios.get(
-        "https://jsonplaceholder.typicode.com/todos"
-      );
+      setIsLoading(true);
+      try {
+        const result = await axios.get(
+          "https://jsonplaceholder.typicode.com/todos"
+        );
 
-      const firstTen: ITodo[] = result.data.slice(0, 10);
-      const rest: ITodo[] = result.data.slice(10);
+        const firstTen: ITodo[] = result.data.slice(0, 10);
+        const rest: ITodo[] = result.data.slice(10);
 
-      setCurrentTodos(firstTen);
-      setRestOfTodos(rest);
+        setCurrentTodos(firstTen);
+        setRestOfTodos(rest);
+        setIsLoading(false);
+      } catch (e) {
+        setIsLoading(false);
+        console.log("Error", e);
+      }
     };
 
     getTodos();
   }, []);
+
+  if (isLoading) {
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <div className="App">
